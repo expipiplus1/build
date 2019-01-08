@@ -1,5 +1,5 @@
---- a/arch/arm/boot/dts/rk3288-xt-q8l-v10.dts	1970-01-01 01:00:00.000000000 +0100
-+++ b/arch/arm/boot/dts/rk3288-xt-q8l-v10.dts	2018-09-23 15:07:23.816787921 +0200
+--- /dev/null
++++ b/arch/arm/boot/dts/rk3288-xt-q8l-v10.dts	2018-12-06 21:46:51.493688015 +0000
 @@ -0,0 +1,969 @@
 +/*
 + * Copyright (c) 2014, 2015 FUKAUMI Naoki <naobsd@gmail.com>
@@ -313,6 +313,21 @@
 +	/delete-node/operating-points;
 +};
 +
++&cpu1 {
++	operating-points-v2 = <&cpu0_opp_table>;
++	/delete-node/operating-points;
++};
++
++&cpu2 {
++	operating-points-v2 = <&cpu0_opp_table>;
++	/delete-node/operating-points;
++};
++
++&cpu3 {
++	operating-points-v2 = <&cpu0_opp_table>;
++	/delete-node/operating-points;
++};
++
 +&gmac {
 +	assigned-clocks = <&cru SCLK_MAC>;
 +	assigned-clock-parents = <&ext_gmac>;
@@ -331,7 +346,6 @@
 +
 +&hdmi {
 +	ddc-i2c-bus = <&i2c5>;
-+	#sound-dai-cells = <0>;
 +	status = "okay";
 +};
 +
@@ -395,6 +409,7 @@
 +		inl1-supply = <&vcc_sys>;
 +		inl2-supply = <&vcc_sys>;
 +		inl3-supply = <&vcc_20>;
++		wakeup-source;
 +
 +		regulators {
 +			
@@ -549,6 +564,7 @@
 +	 * Here should go the RK1000 audio codec parts, but seems that
 +	 * there is no driver in linux kernel at the moment, so we can't
 +	 * describe it.
++	 * Also, most important, there is no RK1000 on our board :)
 +	 * Datasheet is available here:
 +	 * http://dl.radxa.com/rock/docs/hw/ds/RK1000-S%20DATASHEET%20V14.pdf
 +	 */
@@ -831,41 +847,44 @@
 + *  - uart0 is the serial port connected to the bluetooth module
 + *  - uart2 is the onboard serial port 
 + * 
++ * As ok kernel 4.19 DMA for serial ports is disabled because it makes
++ * the ports unusable
++ * 
 + */
 +&uart0 {
 +	pinctrl-names = "default";
 +	pinctrl-0 = <&uart0_xfer>, <&uart0_cts>, <&uart0_rts>;
-+	dmas = <&dmac_peri 1 &dmac_peri 2>;
-+	dma-names = "tx", "rx";
++	//dmas = <&dmac_peri 1 &dmac_peri 2>;
++	//dma-names = "tx", "rx";
 +	status = "okay";
-+//	uart-has-rtscts;	
 +};
 +
 +&uart1 {
-+	dmas = <&dmac_peri 3 &dmac_peri 4>;
-+	dma-names = "tx", "rx";
++	//dmas = <&dmac_peri 3 &dmac_peri 4>;
++	//dma-names = "tx", "rx";
 +	status = "okay";
 +};
 +
 +&uart2 {
-+	dmas = <&dmac_bus_s 4 &dmac_bus_s 5>;
-+	dma-names = "tx", "rx";
++	//dmas = <&dmac_bus_s 4 &dmac_bus_s 5>;
++	//dma-names = "tx", "rx";
 +	status = "okay";
 +};
 +
 +&uart3 {
-+	dmas = <&dmac_peri 7 &dmac_peri 8>;
-+	dma-names = "tx", "rx";
++	//dmas = <&dmac_peri 7 &dmac_peri 8>;
++	//dma-names = "tx", "rx";
 +	status = "okay";
 +};
 +
 +&uart4 {
-+	dmas = <&dmac_peri 9 &dmac_peri 10>;
-+	dma-names = "tx", "rx";
++	//dmas = <&dmac_peri 9 &dmac_peri 10>;
++	//dma-names = "tx", "rx";
 +	status = "disabled";
 +};
 +
 +/*
++ * Here usbphy* should have their proper reset lines described in rk3288.dtsi
 + * Describing resets for usb phy is important because otherwise the USB
 + * port gets stuck in case it goes into autosuspend: plugging any device
 + * when the port is autosuspended will actually kill the port itself and
@@ -874,25 +893,17 @@
 + * specify the proper resources for all the phys though.
 + * The reference patch which works in conjuction with the reset lines:
 + * https://patchwork.kernel.org/patch/9469811/
++ * 
 + */
 +&usbphy {
 +	status = "okay";
 +};
 + 
 +&usbphy0 {
-+    resets = <&cru SRST_USBOTG_PHY>;
-+    reset-names = "phy-reset";
 +    vbus-supply = <&vcc_otg_5v>;
 +};
 +
-+&usbphy1 {
-+    resets = <&cru SRST_USBHOST0_PHY>;
-+    reset-names = "phy-reset";
-+};
-+
 +&usbphy2 {
-+    resets = <&cru SRST_USBHOST1_PHY>;
-+    reset-names = "phy-reset";
 +    vbus-supply = <&vcc_host_5v>;
 +};
 +
@@ -911,27 +922,17 @@
 +};
 +
 +/*
-+ * Enalbe VPU services and complete the relative IOMMU configurations
-+ * including the clocks which are currently missing (kernel 4.17.2) from
-+ * the current base definitions from rk3288.dtsi include file
++ * Enable VPU services and complete the relative IOMMU configurations
 + */
 +&vopb {
 +	status = "okay";
 +};
 +
-+&vopl {
-+	status = "okay";
-+};
-+
-+&vpu_service {
-+	status = "okay";
-+};
-+
-+&hevc_service {
-+	status = "okay";
-+};
-+
 +&vopb_mmu {
++	status = "okay";
++};
++
++&vopl {
 +	status = "okay";
 +};
 +
@@ -943,22 +944,21 @@
 +	status = "okay";
 +};
 +
++&vpu_service {
++	status = "okay";
++};
++
 +&hevc_mmu {
++	status = "okay";
++};
++
++&hevc_service {
 +	status = "okay";
 +};
 +
 +&wdt {
 +	status = "okay";
 +};
-+
-+/* q8 device tree specifies that pwm0 is enabled on the device and
-+ * this is the device which listens for IR remote control
-+ */
-+/*
-+&pwm0 {
-+	status = "okay";
-+};
-+*/
 +
 +// i2s bus is present on q8 device, enable it
 +&i2s {
